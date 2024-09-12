@@ -48,7 +48,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/uudashr/gocognit"
+	"github.com/kivihub/gocognit"
 )
 
 const usageDoc = `Calculate cognitive complexities of Go functions.
@@ -101,24 +101,26 @@ func usage() {
 	os.Exit(2)
 }
 
+var ignoreFileContentExpr string
+
 func main() {
 	var (
-		over         int
-		top          int
-		avg          bool
-		includeTests bool
-		format       string
-		jsonEncode   bool
-		ignoreExpr   string
+		over               int
+		top                int
+		avg                bool
+		includeTests       bool
+		format             string
+		jsonEncode         bool
+		ignoreFileNameExpr string
 	)
-
 	flag.IntVar(&over, "over", defaultOverFlagVal, "show functions with complexity > N only")
 	flag.IntVar(&top, "top", defaultTopFlagVal, "show the top N most complex functions only")
 	flag.BoolVar(&avg, "avg", false, "show the average complexity")
 	flag.BoolVar(&includeTests, "test", true, "indicates whether test files should be included")
 	flag.StringVar(&format, "f", defaultFormat, "the format to use")
 	flag.BoolVar(&jsonEncode, "json", false, "encode the output as JSON")
-	flag.StringVar(&ignoreExpr, "ignore", "", "ignore files matching the given regexp")
+	flag.StringVar(&ignoreFileNameExpr, "ignore", "", "ignore files it's name matching the given regexp")
+	flag.StringVar(&ignoreFileContentExpr, "ignoreContent", "", "ignore files it's content matching the given regexp")
 
 	log.SetFlags(0)
 	log.SetPrefix("gocognit: ")
@@ -136,6 +138,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	Init()
 	stats, err := analyze(args, includeTests)
 	if err != nil {
 		log.Fatal(err)
@@ -143,7 +146,7 @@ func main() {
 
 	sort.Sort(byComplexity(stats))
 
-	ignoreRegexp, err := prepareRegexp(ignoreExpr)
+	ignoreRegexp, err := prepareRegexp(ignoreFileNameExpr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -202,6 +205,9 @@ func isDir(filename string) bool {
 func analyzeFile(fname string, stats []gocognit.Stat) ([]gocognit.Stat, error) {
 	fset := token.NewFileSet()
 
+	if IgnoreFileByContent(fname) {
+		return stats, nil
+	}
 	f, err := parser.ParseFile(fset, fname, nil, parser.ParseComments)
 	if err != nil {
 		return nil, err

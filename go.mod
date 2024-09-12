@@ -1,4 +1,4 @@
-module github.com/uudashr/gocognit
+module github.com/kivihub/gocognit
 
 go 1.19
 

@@ -3,7 +3,7 @@ package gocognit_test
 import (
 	"testing"
 
-	"github.com/uudashr/gocognit"
+	"github.com/kivihub/gocognit"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 

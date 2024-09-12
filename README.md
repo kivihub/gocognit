@@ -1,4 +1,4 @@
-[![Go Reference](https://pkg.go.dev/badge/github.com/uudashr/gocognit.svg)](https://pkg.go.dev/github.com/uudashr/gocognit)
+[![Go Reference](https://pkg.go.dev/badge/github.com/kivihub/gocognit.svg)](https://pkg.go.dev/github.com/kivihub/gocognit)
 [![go-recipes](https://raw.githubusercontent.com/nikolaydubina/go-recipes/main/badge.svg?raw=true)](https://github.com/nikolaydubina/go-recipes)
 
 # Gocognit
@@ -148,13 +148,13 @@ The following structures receive a nesting increment commensurate with their nes
 ## Installation
 
 ```shell
-go install github.com/uudashr/gocognit/cmd/gocognit@latest
+go install github.com/kivihub/gocognit/cmd/gocognit@latest
 ```
 
 or 
 
 ```shell
-go get github.com/uudashr/gocognit/cmd/gocognit
+go get github.com/kivihub/gocognit/cmd/gocognit
 ```
 
 ## Usage
