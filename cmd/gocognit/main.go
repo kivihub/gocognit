@@ -59,15 +59,18 @@ Usage:
 
 Flags:
 
-  -over N    show functions with complexity > N only
-             and return exit code 1 if the output is non-empty
-  -top N     show the top N most complex functions only
-  -avg       show the average complexity over all functions,
-             not depending on whether -over or -top are set
-  -test      indicates whether test files should be included
-  -json      encode the output as JSON
-  -f format  string the format to use 
-             (default "{{.PkgName}}.{{.FuncName}}:{{.Complexity}}:{{.Pos}}")
+  -ignorePath     ignore files it's path matching the given regexp
+  -ignoreContent  ignore files it's content matching the given regexp
+  -over N         show functions with complexity > N only
+                  and return exit code 1 if the output is non-empty
+  -top N          show the top N most complex functions only
+  -avg            show the average complexity over all functions,
+                  not depending on whether -over or -top are set
+  -test           indicates whether test files should be included
+  -json           encode the output as JSON
+  -verbose        output detail
+  -f format       string the format to use 
+                  (default "{{.PkgName}}.{{.FuncName}}:{{.Complexity}}:{{.Pos}}")
 
 The (default) output fields for each line are:
 
@@ -102,16 +105,17 @@ func usage() {
 }
 
 var ignoreFileContentExpr string
+var ignoreFilePathExpr string
+var verbose bool
 
 func main() {
 	var (
-		over               int
-		top                int
-		avg                bool
-		includeTests       bool
-		format             string
-		jsonEncode         bool
-		ignoreFileNameExpr string
+		over         int
+		top          int
+		avg          bool
+		includeTests bool
+		format       string
+		jsonEncode   bool
 	)
 	flag.IntVar(&over, "over", defaultOverFlagVal, "show functions with complexity > N only")
 	flag.IntVar(&top, "top", defaultTopFlagVal, "show the top N most complex functions only")
@@ -119,8 +123,9 @@ func main() {
 	flag.BoolVar(&includeTests, "test", true, "indicates whether test files should be included")
 	flag.StringVar(&format, "f", defaultFormat, "the format to use")
 	flag.BoolVar(&jsonEncode, "json", false, "encode the output as JSON")
-	flag.StringVar(&ignoreFileNameExpr, "ignore", "", "ignore files it's name matching the given regexp")
+	flag.StringVar(&ignoreFilePathExpr, "ignorePath", "", "ignore files it's path matching the given regexp")
 	flag.StringVar(&ignoreFileContentExpr, "ignoreContent", "", "ignore files it's content matching the given regexp")
+	flag.BoolVar(&verbose, "verbose", false, "output detail")
 
 	log.SetFlags(0)
 	log.SetPrefix("gocognit: ")
@@ -138,7 +143,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	Init()
+	InitIgnoreRegexBeforeAnalyze()
 	stats, err := analyze(args, includeTests)
 	if err != nil {
 		log.Fatal(err)
@@ -146,12 +151,7 @@ func main() {
 
 	sort.Sort(byComplexity(stats))
 
-	ignoreRegexp, err := prepareRegexp(ignoreFileNameExpr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	filteredStats := filterStats(stats, ignoreRegexp, top, over)
+	filteredStats := filterStats(stats, top, over)
 
 	var written int
 	if jsonEncode {
@@ -203,11 +203,10 @@ func isDir(filename string) bool {
 }
 
 func analyzeFile(fname string, stats []gocognit.Stat) ([]gocognit.Stat, error) {
-	fset := token.NewFileSet()
-
-	if IgnoreFileByContent(fname) {
+	if IgnoreFileByPath(fname) || IgnoreFileByContent(fname) {
 		return stats, nil
 	}
+	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, fname, nil, parser.ParseComments)
 	if err != nil {
 		return nil, err
@@ -271,15 +270,19 @@ func writeJSONStats(w io.Writer, stats []gocognit.Stat) (int, error) {
 	return len(stats), nil
 }
 
-func prepareRegexp(expr string) (*regexp.Regexp, error) {
+func prepareRegexp(expr string) *regexp.Regexp {
 	if expr == "" {
-		return nil, nil
+		return nil
 	}
 
-	return regexp.Compile(expr)
+	ret, err := regexp.Compile(expr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return ret
 }
 
-func filterStats(sortedStats []gocognit.Stat, ignoreRegexp *regexp.Regexp, top, over int) []gocognit.Stat {
+func filterStats(sortedStats []gocognit.Stat, top, over int) []gocognit.Stat {
 	var filtered []gocognit.Stat
 
 	i := 0
@@ -290,10 +293,6 @@ func filterStats(sortedStats []gocognit.Stat, ignoreRegexp *regexp.Regexp, top, 
 
 		if stat.Complexity <= over {
 			break
-		}
-
-		if ignoreRegexp != nil && ignoreRegexp.MatchString(stat.Pos.Filename) {
-			continue
 		}
 
 		filtered = append(filtered, stat)
