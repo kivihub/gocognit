@@ -168,15 +168,18 @@ Usage:
   gocognit [<flag> ...] <Go file or directory> ...
 
 Flags:
-
-  -over N    show functions with complexity > N only
-             and return exit code 1 if the output is non-empty
-  -top N     show the top N most complex functions only
-  -avg       show the average complexity over all functions,
-             not depending on whether -over or -top are set
-  -json      encode the output as JSON
-  -f format  string the format to use 
-             (default "{{.PkgName}}.{{.FuncName}}:{{.Complexity}}:{{.Pos}}")
+  -ignorePath     ignore files it's path matching the given regexp
+  -ignoreContent  ignore files it's content matching the given regexp
+  -over N         show functions with complexity > N only
+                  and return exit code 1 if the output is non-empty
+  -top N          show the top N most complex functions only
+  -avg            show the average complexity over all functions,
+                  not depending on whether -over or -top are set
+  -test           indicates whether test files should be included
+  -json           encode the output as JSON
+  -verbose        output detail
+  -f format       string the format to use 
+                  (default "{{.PkgName}}.{{.FuncName}}:{{.Complexity}}:{{.Pos}}")
 
 The (default) output fields for each line are:
 

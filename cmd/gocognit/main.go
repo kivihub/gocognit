@@ -138,6 +138,21 @@ func main() {
 		usage()
 	}
 
+	if verbose {
+		param := map[string]interface{}{
+			"over":          over,
+			"top":           top,
+			"avg":           avg,
+			"test":          includeTests,
+			"f":             format,
+			"json":          jsonEncode,
+			"ignorePath":    ignoreFilePathExpr,
+			"ignoreContent": ignoreFileContentExpr,
+			"args":          args,
+		}
+		fmt.Printf("gocognit param: %s\n", MarshalJSONPretty(param))
+	}
+
 	tmpl, err := template.New("gocognit").Parse(format)
 	if err != nil {
 		log.Fatal(err)
